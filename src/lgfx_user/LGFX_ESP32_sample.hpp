@@ -45,6 +45,15 @@ class LGFX : public lgfx::LGFX_Device
 //lgfx::Panel_ILI9486     _panel_instance;
 //lgfx::Panel_ILI9488     _panel_instance;
 //lgfx::Panel_IT8951      _panel_instance;
+//lgfx::Panel_LS044Q7DH01 _panel_instance;
+//lgfx::Panel_LS032B7DD02 _panel_instance;
+//lgfx::Panel_LS027B7DH01 _panel_instance;
+//lgfx::Panel_LS018B7DH02 _panel_instance;
+//lgfx::Panel_LS013B7DH05 _panel_instance;
+//lgfx::Panel_LS013B7DH03 _panel_instance;
+//lgfx::Panel_LS012B7DD01 _panel_instance;
+//lgfx::Panel_LS011B7DH03 _panel_instance;
+//lgfx::Panel_LS010B7DH04 _panel_instance;
 //lgfx::Panel_RA8875      _panel_instance;
 //lgfx::Panel_SH110x      _panel_instance; // SH1106, SH1107
 //lgfx::Panel_SSD1306     _panel_instance;

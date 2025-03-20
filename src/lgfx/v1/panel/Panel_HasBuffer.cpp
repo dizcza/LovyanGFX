@@ -46,7 +46,7 @@ namespace lgfx
     auto len = _get_buffer_length();
     if (_buf) heap_free(_buf);
     _buf = static_cast<uint8_t*>(heap_alloc_dma(len));
-
+    ESP_LOGI("LGFX","Buf allocated");
     return ((_buf != nullptr) && (Panel_Device::init(use_reset)));
   }
 
