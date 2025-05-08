@@ -107,8 +107,8 @@ public:
       cfg.use_lock = true; // Set true if you want to use transaction locking
       cfg.dma_channel = SPI_DMA_CH_AUTO; // Set the DMA channel to use (0=DMA not used / 1=1ch / 2=ch / SPI_DMA_CH_AUTO=automatic setting)
       // * Due to the ESP-IDF version upgrade, SPI_DMA_CH_AUTO (automatic setting) is now recommended for the DMA channel. Specifying 1ch or 2ch is no longer recommended.
-      cfg.pin_sclk = 40; // Set the SPI SCLK pin number
-      cfg.pin_mosi = 39; // Set the SPI MOSI pin number
+      cfg.pin_sclk = 14; // Set the SPI SCLK pin number
+      cfg.pin_mosi = 15; // Set the SPI MOSI pin number
       cfg.pin_miso = -1; // Set the MISO pin number for SPI (-1 = disable)
       cfg.pin_dc = -1; // Set SPI D/C pin number (-1 = disable)
      // If you use a common SPI bus with the SD card, be sure to set MISO and do not omit it.
@@ -120,14 +120,16 @@ public:
     { // Set up the display panel control.
       auto cfg = _panel_instance.config(); // Get the structure for the display panel settings.
 
-      cfg.pin_cs = 41; // Pin number to which CS is connected (-1 = disable)
+      cfg.pin_cs = 13; // Pin number to which CS is connected (-1 = disable)
       cfg.pin_rst = -1; // Pin number to which RST is connected (-1 = disable)
       cfg.pin_busy = -1; // Pin number to which BUSY is connected (-1 = disable)
 
       // * The following settings are set to general initial values ​​for each panel, so try commenting out any items you are unsure of.
 
-      // cfg.panel_width = 400; // Actual displayable width
-      // cfg.panel_height = 240; // Actual displayable height
+      cfg.panel_width = 400; // Actual displayable width
+      cfg.panel_height = 240; // Actual displayable height
+      cfg.memory_width = cfg.panel_width;
+      cfg.memory_height = cfg.panel_height;
       // cfg.offset_x = 0; // Panel X-direction offset
       // cfg.offset_y = 0; // Panel offset in the Y direction
       cfg.offset_rotation = 0; // Rotation offset value 0~7 (4~7 are upside down)

@@ -34,6 +34,9 @@ namespace lgfx
 
   struct Panel_SharpLCD : public Panel_HasBuffer
   {
+  public:
+    Panel_SharpLCD();
+  
     color_depth_t setColorDepth(color_depth_t depth) override;
 
     bool init(bool use_reset) override;
@@ -41,7 +44,7 @@ namespace lgfx
     void waitDisplay(void) override {}
     bool displayBusy(void) override { return false; }
 
-    void setRotation(uint_fast8_t) override { _rotation = r; }
+    void setRotation(uint_fast8_t r) override { _rotation = r; }
     void setBrightness(uint8_t) override {}
     void setInvert(bool invert) override;
     void setSleep(bool) override {}
@@ -60,12 +63,20 @@ namespace lgfx
 
     void init_cs(void) override;
     void cs_control(bool level) override;
+    
+    void clearDisplay();
+    void refresh();
 
   protected:
 
-    static constexpr uint8_t CMD_UPDATE             = 0x80;
-    static constexpr uint8_t BIT_VCOM               = 0x40;
-    static constexpr uint8_t CMD_CLEAR              = 0x20;
+    static constexpr uint8_t CMD_UPDATE             = 0x01;  // 0x80 in LSB format
+    static constexpr uint8_t BIT_VCOM               = 0x02;  // 0x40 in LSB format
+    static constexpr uint8_t CMD_CLEAR              = 0x04;  // 0x20 in LSB format
+
+    // static constexpr uint8_t CMD_UPDATE             = 0x80;  // 0x80 in LSB format
+    // static constexpr uint8_t BIT_VCOM               = 0x40;  // 0x40 in LSB format
+    // static constexpr uint8_t CMD_CLEAR              = 0x20;  // 0x20 in LSB format
+
     static constexpr uint8_t VAL_TRAILER            = 0x00;
     static constexpr unsigned long _v_toggle_msec   = 990;
 
@@ -101,7 +112,7 @@ namespace lgfx
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       /// Actual number of LSBs moved to the command byte in reverse order
       _cfg.offset_y = 2;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
 
@@ -117,7 +128,7 @@ namespace lgfx
       /// Actual number of bytes per row, including row number and trailer
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
 
@@ -131,7 +142,7 @@ namespace lgfx
       _cfg.offset_x = 1;
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
 
@@ -149,7 +160,7 @@ namespace lgfx
       /// 3) One Trailer byte
       _cfg.memory_width = _cfg.offset_x + 30 + 1;
       _cfg.offset_y = 1;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
 
@@ -162,7 +173,7 @@ namespace lgfx
       _cfg.offset_x = 1;
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
 
@@ -175,7 +186,7 @@ namespace lgfx
       _cfg.offset_x = 1;
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
   
@@ -188,7 +199,7 @@ namespace lgfx
       _cfg.offset_x = 1;
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
   
@@ -201,7 +212,7 @@ namespace lgfx
       _cfg.offset_x = 1;
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
   
@@ -214,7 +225,7 @@ namespace lgfx
       _cfg.offset_x = 1;
       _cfg.memory_width = _cfg.offset_x + _cfg.panel_width / 8 + 1;
       _cfg.offset_y = 0;
-      _auto_display = true;
+      _auto_display = false;
     }
   };
 

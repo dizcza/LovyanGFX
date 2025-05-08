@@ -52,7 +52,10 @@ namespace lgfx
 
   void Panel_HasBuffer::beginTransaction(void)
   {
-    if (_in_transaction) return;
+    if (_in_transaction) {
+      ESP_LOGW("LGFX", "Previous transaction not finished, ignore");
+      return;
+    };
     _in_transaction = true;
     _bus->beginTransaction();
     cs_control(false);
@@ -60,7 +63,10 @@ namespace lgfx
 
   void Panel_HasBuffer::endTransaction(void)
   {
-    if (!_in_transaction) return;
+    if (!_in_transaction) {
+      ESP_LOGW("LGFX", "NOT in transaction, ignore");
+      return;
+    }
     _in_transaction = false;
     _bus->endTransaction();
     cs_control(true);

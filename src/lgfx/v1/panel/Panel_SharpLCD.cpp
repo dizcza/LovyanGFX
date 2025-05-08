@@ -20,6 +20,7 @@ Contributors:
 #include "../Bus.hpp"
 #include "../platforms/common.hpp"
 #include "../misc/pixelcopy.hpp"
+#include "pgmspace.h"
 
 #ifdef min
 #undef min
@@ -34,7 +35,15 @@ namespace lgfx
  {
 //----------------------------------------------------------------------------
 
+  static const char* TAG = "SharpLCD";
+
   static constexpr uint8_t Bayer[] = { 8, 136, 40, 168, 200, 72, 232, 104, 56, 184, 24, 152, 248, 120, 216, 88, 8, 136, 40, 168, 200, 72, 232, 104, 56, 184, 24, 152, 248, 120, 216, 88 };
+
+  // 1<<n is a costly operation on AVR -- table usu. smaller & faster
+  static const uint8_t PROGMEM set[] = {1, 2, 4, 8, 16, 32, 64, 128},
+  clr[] = {(uint8_t)~1,  (uint8_t)~2,  (uint8_t)~4,
+          (uint8_t)~8,  (uint8_t)~16, (uint8_t)~32,
+          (uint8_t)~64, (uint8_t)~128};
 
   inline static uint32_t to_gray(uint8_t r, uint8_t g, uint8_t b)
   {
@@ -45,61 +54,41 @@ namespace lgfx
           ) >> 24;
   }
 
+  Panel_SharpLCD::Panel_SharpLCD() {
+    _epd_mode = epd_quality;
+  }
+
   void Panel_SharpLCD::setInvert(bool invert)
   {
+    ESP_LOGI(TAG, "Set Invert %d -> %d", _invert, invert);
     _invert = invert;
   }
 
   color_depth_t Panel_SharpLCD::setColorDepth(color_depth_t depth)
   {
-    _write_depth = color_depth_t::rgb565_2Byte;
-    _read_depth = color_depth_t::rgb565_2Byte;
-    return color_depth_t::rgb565_2Byte;
-    // _write_depth = color_depth_t::grayscale_1bit;
-    // _read_depth = color_depth_t::grayscale_1bit;
-    // return color_depth_t::grayscale_1bit;
+    _write_depth = color_depth_t::grayscale_1bit;
+    _read_depth = color_depth_t::grayscale_1bit;
+    depth = color_depth_t::grayscale_1bit;
+    return depth;
   }
 
   size_t Panel_SharpLCD::_get_buffer_length(void) const
   {
-    return (_cfg.memory_width * _cfg.memory_height);
+    return (_cfg.memory_width * _cfg.memory_height / 8);
   }
 
   bool Panel_SharpLCD::init(bool use_reset)
   {
-    ESP_LOGD("LGFX","Panel_SharpLCD::init");
+    ESP_LOGD(TAG, "Panel_SharpLCD::init");
     if (!Panel_HasBuffer::init(false))
     {
       return false;
     }
-    ESP_LOGD("LGFX","Panel_SharpLCD::init done");
-    //_vcom ^= BIT_VCOM;
-    // startWrite(true);
-    // _bus->writeData(CMD_CLEAR, 8);
-    // _bus->writeData(VAL_TRAILER, 8);
-    // _send_msec = millis();
-    // _bus->flush();
-    // endWrite();
-    ESP_LOGD("LGFX","Panel_SharpLCD::screen init");
-    // fill buffer with row numbers. Top row number is 1 :)
-    uint16_t idxL = 0;
-    for (uint8_t y = 0; y < _cfg.panel_height; y++)
-    {
-      if (_cfg.offset_x == 1)
-      {
-        _buf[idxL] = (SWAP8(y + 1)); // write row num
-      }
-      else
-      {
-        // over 255 rows LCD
-        _buf[idxL + 1] = (SWAP8(((y + 1) >> _cfg.offset_y) & 0xFF));
-        uint8_t lsb = (SWAP2((y + 1) % (1 << _cfg.offset_y))); // % 2 or % 4 if panel has more than 9 bits for row
-        _buf[idxL] = CMD_UPDATE | lsb;
-      }
-      idxL += _cfg.memory_width; //next row
-      _buf[idxL - 1] = 0; // write previous row trailer
-    }
-    ESP_LOGD("LGFX","Panel_SharpLCD::buf filled");
+    ESP_LOGD(TAG, "Panel_SharpLCD::init done");
+    _vcom = BIT_VCOM;
+    setColorDepth(color_depth_t::grayscale_1bit);
+    // clearDisplay();
+    ESP_LOGD(TAG, "Panel_SharpLCD::screen init");
     return true;
   }
 
@@ -224,17 +213,16 @@ namespace lgfx
 
   void Panel_SharpLCD::_draw_pixel(uint_fast16_t x, uint_fast16_t y, uint32_t value)
   {
-    uint32_t idx = y * _cfg.memory_width + _cfg.offset_x + (x >> 3);
-    uint32_t mask = 1 << (7 - (x & 7)); //LSB go to MSB
-    bool flg = 256 <= value + Bayer[ + (((x + _bayer_offset) & 3) | ((y + (_bayer_offset >> 2)) & 3) << 2)];
-    if (flg) _buf[idx] |=  mask;
-    else     _buf[idx] &= ~mask;
+    if (value) {
+      _buf[(y * _cfg.memory_width + x) / 8] |= pgm_read_byte(&set[x & 7]);
+    } else {
+      _buf[(y * _cfg.memory_width + x) / 8] &= pgm_read_byte(&clr[x & 7]);
+    }
   }
 
   bool Panel_SharpLCD::_read_pixel(uint_fast16_t x, uint_fast16_t y)
   {
-    uint32_t idx = y * _cfg.memory_width + _cfg.offset_x + (x >> 3);
-    return _buf[idx] & (1 << (7 - (x & 7))); //get LSB from MSB
+    return _buf[(y * _cfg.memory_width + x) / 8] & pgm_read_byte(&set[x & 7]) ? 1 : 0;
   }
 
   void Panel_SharpLCD::_update_transferred_rect(uint_fast16_t &xs, uint_fast16_t &ys, uint_fast16_t &xe, uint_fast16_t &ye)
@@ -278,6 +266,9 @@ namespace lgfx
 
   void Panel_SharpLCD::display(uint_fast16_t x, uint_fast16_t y, uint_fast16_t w, uint_fast16_t h)
   {
+    // refresh();
+    clearDisplay();
+    return;
     if (0 < w && 0 < h)
     {
       _range_mod.left   = std::min<int16_t>(_range_mod.left  , x        );
@@ -289,11 +280,11 @@ namespace lgfx
     {
 //      if (millis() - _send_msec >= _v_toggle_msec) 
         _vcom ^= BIT_VCOM;
-      startWrite();
+      beginTransaction();
       _bus->writeData(_vcom, 8);
       _bus->writeData(VAL_TRAILER, 8);
       auto send_msec = millis();
-      endWrite();
+      endTransaction();
       return;
     }
 
@@ -305,7 +296,7 @@ namespace lgfx
       if (_cfg.offset_x == 1)
       {
         //LCD with less than 255 rows 
-        startWrite();
+        beginTransaction();
         _bus->writeData(CMD_UPDATE | _vcom, 8);
       }
       else
@@ -319,13 +310,13 @@ namespace lgfx
           _buf[idxL] |= _vcom;
           idxL += _cfg.memory_width;
         }
-        startWrite();
+        beginTransaction();
       }
     //}  
     _exec_transfer(_range_mod, true);
     _bus->writeData(VAL_TRAILER, 8);
     auto send_msec = millis();
-    endWrite();
+    endTransaction();
 
     _range_mod.top    = INT16_MAX;
     _range_mod.left   = INT16_MAX;
@@ -337,6 +328,7 @@ namespace lgfx
   {
     auto pin = _cfg.pin_cs;
     if (pin < 0) return;
+    ESP_LOGI(TAG, "Init CS %d", pin);
     lgfx::gpio_lo(pin);
     lgfx::pinMode(pin , pin_mode_t::output);
   }
@@ -345,6 +337,7 @@ namespace lgfx
   {
     auto pin = _cfg.pin_cs;
     if (pin < 0) return;
+    // ESP_LOGI(TAG, "CS %d level %d", pin, level);
     if (level)
     {
       lgfx::gpio_lo(pin);
@@ -353,6 +346,55 @@ namespace lgfx
     {
       lgfx::gpio_hi(pin);
     }
+  }
+
+  void Panel_SharpLCD::clearDisplay() {
+    memset(_buf, 0xff, _get_buffer_length());
+
+    ESP_LOGI(TAG, "clearDisplay");
+
+    // beginTransaction();
+    // log_d("beginTransaction");
+
+    uint8_t clear_data[2] = {(uint8_t)(_vcom | CMD_CLEAR), 0x00};
+    _bus->writeBytes(clear_data, 2, false, false);
+    // _bus->writeData(_vcom | CMD_CLEAR);
+    // _bus->transfer(0x00);
+
+    // _bus->writeData(_vcom | CMD_CLEAR, 8);
+    // _bus->writeData(VAL_TRAILER, 8);
+    _vcom = _vcom == 0 ? BIT_VCOM : 0;
+
+    // endTransaction();
+    // log_d("endTransaction");
+  }
+
+  void Panel_SharpLCD::refresh(void) {
+    uint16_t i, currentline;
+  
+    beginTransaction();
+
+    _bus->writeData(_vcom | CMD_UPDATE, 8);
+    _vcom = _vcom == 0 ? BIT_VCOM : 0;
+  
+    uint8_t bytes_per_line = _cfg.panel_width / 8;
+    uint8_t line[bytes_per_line + 2];
+  
+    for (i = 0; i < _get_buffer_length(); i += bytes_per_line) {
+      // Send address byte
+      currentline = ((i + 1) / bytes_per_line) + 1;
+      line[0] = currentline;
+      // copy over this line
+      memcpy(line + 1, _buf + i, bytes_per_line);
+      // Send end of line
+      line[bytes_per_line + 1] = 0x00;
+      // send it!
+      // _bus->writeBytes(line, bytes_per_line + 2, false, false);
+      _bus->writeBytes(line, bytes_per_line + 2);
+    }
+    _bus->writeData(VAL_TRAILER, 8);
+
+    endTransaction();
   }
 
 //----------------------------------------------------------------------------

@@ -41,8 +41,8 @@ class LGFX : public lgfx::LGFX_Device
 //lgfx::Panel_HX8357B     _panel_instance;
 //lgfx::Panel_HX8357D     _panel_instance;
 //lgfx::Panel_ILI9163     _panel_instance;
-//lgfx::Panel_ILI9341     _panel_instance;
-lgfx::Panel_ILI9342     _panel_instance;
+lgfx::Panel_ILI9341     _panel_instance;
+// lgfx::Panel_ILI9342     _panel_instance;
 //lgfx::Panel_ILI9481     _panel_instance;
 //lgfx::Panel_ILI9486     _panel_instance;
 //lgfx::Panel_ILI9488     _panel_instance;
@@ -107,10 +107,10 @@ public:
       cfg.use_lock = true; // Set true if you want to use transaction locking
       cfg.dma_channel = SPI_DMA_CH_AUTO; // Set the DMA channel to use (0=DMA not used / 1=1ch / 2=ch / SPI_DMA_CH_AUTO=automatic setting)
       // * Due to the ESP-IDF version upgrade, SPI_DMA_CH_AUTO (automatic setting) is now recommended for the DMA channel. Specifying 1ch or 2ch is no longer recommended.
-      cfg.pin_sclk = 40; // Set the SPI SCLK pin number
-      cfg.pin_mosi = 39; // Set the SPI MOSI pin number
+      cfg.pin_sclk = 14; // Set the SPI SCLK pin number
+      cfg.pin_mosi = 15; // Set the SPI MOSI pin number
       cfg.pin_miso = -1; // Set the MISO pin number for SPI (-1 = disable)
-      cfg.pin_dc = 38; // Set SPI D/C pin number (-1 = disable)
+      cfg.pin_dc = 5; // Set SPI D/C pin number (-1 = disable)
      // If you use a common SPI bus with the SD card, be sure to set MISO and do not omit it.
       _bus_instance.config(cfg); // Reflect the setting value to the bus.
       _panel_instance.setBus(&_bus_instance); // Set the bus to the panel.
@@ -119,8 +119,8 @@ public:
     { // Set up the display panel control.
       auto cfg = _panel_instance.config(); // Get the structure for the display panel settings.
 
-      cfg.pin_cs = 41; // Pin number to which CS is connected (-1 = disable)
-      cfg.pin_rst = 5; // Pin number to which RST is connected (-1 = disable)
+      cfg.pin_cs = 13; // Pin number to which CS is connected (-1 = disable)
+      cfg.pin_rst = 22; // Pin number to which RST is connected (-1 = disable)
       cfg.pin_busy = -1; // Pin number to which BUSY is connected (-1 = disable)
 
       // * The following settings are set to general initial values ​​for each panel, so try commenting out any items you are unsure of.
@@ -148,7 +148,7 @@ public:
     { // Set the backlight control. (Delete if not required)
       auto cfg = _light_instance.config(); // Get the structure for the backlight settings.
 
-      cfg.pin_bl = 4; // Pin number to which the backlight is connected
+      cfg.pin_bl = 21; // Pin number to which the backlight is connected
       cfg.invert = false; // true to invert the backlight brightness
       cfg.freq = 44100; // Backlight PWM frequency
       cfg.pwm_channel = 7; // PWM channel number to use

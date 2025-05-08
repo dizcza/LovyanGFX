@@ -501,7 +501,7 @@ namespace lgfx
         spi_num = HSPI;
         if (spi_host == SPI2_HOST) { spi_num = FSPI; }
 #endif
-        _spi_handle[spi_host] = spiStartBus(spi_num, SPI_CLK_EQU_SYSCLK, 0, 0);
+        _spi_handle[spi_host] = spiStartBus(spi_num, SPI_CLK_EQU_SYSCLK, 0, 1);
       }
 
 #endif
@@ -536,7 +536,7 @@ namespace lgfx
         memset(&devcfg, 0, sizeof(devcfg));
         devcfg.clock_speed_hz = 10000000;
         devcfg.spics_io_num = -1;
-        devcfg.flags = SPI_DEVICE_3WIRE | SPI_DEVICE_HALFDUPLEX;
+        devcfg.flags = SPI_DEVICE_3WIRE | SPI_DEVICE_HALFDUPLEX | SPI_DEVICE_TXBIT_LSBFIRST;
         devcfg.queue_size = 1;
         if (ESP_OK != spi_bus_add_device(static_cast<spi_host_device_t>(spi_host), &devcfg, &_spi_dev_handle[spi_host])) {
           ESP_LOGW("LGFX", "Failed to spi_bus_add_device. ");
